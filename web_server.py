@@ -500,6 +500,15 @@ state = get_state("default")
 # FastAPI instantiation
 app = FastAPI(title="InteRComunicador Web")
 
+@app.on_event("startup")
+def open_browser():
+    import webbrowser
+    try:
+        webbrowser.open("http://127.0.0.1:8000")
+    except Exception as e:
+        logging.error(f"Error opening browser: {e}")
+
+
 # Serve UI static assets
 @app.get("/")
 def get_index():
