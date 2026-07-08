@@ -1771,6 +1771,45 @@ btnDisconnect.onclick = () => {
     sendAction("disconnect");
 };
 
+const btnShutdown = document.getElementById("btn-shutdown");
+if (btnShutdown) {
+    btnShutdown.onclick = async () => {
+        if (confirm("¿Estás seguro de que deseas apagar InteRComunicador?\n\nEsto cerrará el servidor de fondo y desconectará todas las salas de chat activas.")) {
+            document.body.innerHTML = `
+                <div style="
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
+                    background-color: #1a1b26;
+                    color: #a9b1d6;
+                    font-family: 'Outfit', 'Inter', sans-serif;
+                    text-align: center;
+                ">
+                    <i class="fa-solid fa-power-off" style="font-size: 64px; color: #f7768e; margin-bottom: 20px; animation: pulse 2s infinite;"></i>
+                    <h2 style="color: #ffffff; margin-bottom: 10px; font-weight: 700;">InteRComunicador Apagado</h2>
+                    <p style="color: #565f89; margin-bottom: 20px; font-size: 16px;">El servidor web se ha detenido con éxito y se han cerrado todas las conexiones IRC.</p>
+                    <p style="font-size: 14px; color: #565f89; opacity: 0.8;">Ya puedes cerrar esta pestaña del navegador de forma segura.</p>
+                </div>
+                <style>
+                    @keyframes pulse {
+                        0% { transform: scale(1); opacity: 1; }
+                        50% { transform: scale(1.1); opacity: 0.7; }
+                        100% { transform: scale(1); opacity: 1; }
+                    }
+                </style>
+            `;
+            try {
+                await fetch("/api/shutdown", { method: "POST" });
+            } catch(e) {
+                console.error("Error calling shutdown:", e);
+            }
+        }
+    };
+}
+
+
 // Modals forms submissions
 joinForm.onsubmit = (e) => {
     e.preventDefault();

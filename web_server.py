@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any, Set
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, BackgroundTasks
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
@@ -530,6 +530,29 @@ def api_get_config():
 def api_save_config(config: dict):
     save_config(config)
     return {"status": "ok"}
+
+@app.post("/api/shutdown")
+def api_shutdown(background_tasks: BackgroundTasks):
+    logging.info("Shutdown requested via web API")
+    
+    # Disconnect all active IRC clients
+    for s_id, s in list(sessions.items()):
+        if s.client and s.client.connected:
+            try:
+                asyncio.create_task(s.client.disconnect())
+            except Exception as e:
+                logging.error(f"Error disconnecting client {s_id}: {e}")
+                
+    def kill_server():
+        import time
+        import os
+        import signal
+        time.sleep(0.5)
+        os.kill(os.getpid(), signal.SIGINT)
+        
+    background_tasks.add_task(kill_server)
+    return {"status": "ok"}
+
 
 @app.get("/api/state")
 def api_get_state(session_id: str = "default"):

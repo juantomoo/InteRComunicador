@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+    <!-- A clean, monochromatic outline logo for InteRComunicador (IRC) -->
+    <!-- Outer chat bubble outline -->
+    <path d="M96 112 h320 c26 0 48 22 48 48 v160 c0 26-22 48-48 48 h-80 l-60 60 v-60 h-128 c-26 0-48-22-48-48 v-160 c0-26 22-48 48-48 z" 
+          fill="none" stroke="#8ff5c7" stroke-width="28" stroke-linejoin="round" stroke-linecap="round" />
+    <!-- Styled Bold text "IRC" in the center -->
+    <text x="256" y="248" font-family="'Outfit', 'Inter', 'Liberation Sans', sans-serif" font-weight="900" font-size="96" fill="#8ff5c7" text-anchor="middle" letter-spacing="4">IRC</text>
+    <!-- Three communication node points at the bottom -->
+    <circle cx="200" cy="296" r="16" fill="#8ff5c7" />
+    <circle cx="256" cy="296" r="16" fill="#8ff5c7" />
+    <circle cx="312" cy="296" r="16" fill="#8ff5c7" />
+</svg>

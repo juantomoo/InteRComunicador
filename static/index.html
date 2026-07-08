@@ -181,9 +181,12 @@
                     </div>
                 </div>
                 
-                <div class="sidebar-footer">
-                    <button id="btn-disconnect" class="action-btn danger">
-                        <i class="fa-solid fa-power-off"></i> Desconectar
+                <div class="sidebar-footer" style="display: flex; gap: 8px; padding: 12px 16px;">
+                    <button id="btn-disconnect" class="action-btn danger" style="flex: 1; padding: 8px 6px; font-size: 12px;" title="Desconectar de la red IRC activa">
+                        <i class="fa-solid fa-plug-circle-xmark"></i> Desconectar
+                    </button>
+                    <button id="btn-shutdown" class="action-btn danger" style="flex: 1; padding: 8px 6px; font-size: 12px;" title="Apagar completamente la aplicación (servidor de fondo)">
+                        <i class="fa-solid fa-power-off"></i> Apagar
                     </button>
                 </div>
             </aside>
