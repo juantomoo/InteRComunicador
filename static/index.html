@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InteRComunicador Web</title>
+    <!-- Google Fonts: Inter and Fira Code for code/nicks -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- BARRA DE SERVIDORES IZQUIERDA -->
+        <aside class="servers-sidebar">
+            <div class="servers-list" id="servers-list">
+                <!-- Se llena dinámicamente -->
+            </div>
+            <button id="btn-add-server" class="add-server-btn" title="Conectar a otra red / servidor">
+                <i class="fa-solid fa-plus"></i>
+            </button>
+        </aside>
+
+        <!-- CONTENIDO PRINCIPAL A LA DERECHA -->
+        <div class="main-content">
+            <!-- ----------------- PANTALLA DE CONEXIÓN ----------------- -->
+            <div id="connection-screen" class="screen active">
+            <div class="glass-card connection-card">
+                <div class="card-header">
+                    <div class="logo">
+                            <i class="fa-solid fa-satellite-dish pulse-icon"></i>
+                        <h1>InteRComunicador</h1>
+                    </div>
+                    <p class="subtitle">Cliente IRC de alto rendimiento</p>
+                </div>
+                
+                <form id="connect-form" class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="preset-select"><i class="fa-solid fa-cloud"></i> Red / Servidor</label>
+                            <select id="preset-select"></select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row split">
+                        <div class="form-group flex-3">
+                            <label for="server-host">Host de Servidor</label>
+                            <input type="text" id="server-host" required placeholder="irc.libera.chat">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label for="server-port">Puerto</label>
+                            <input type="number" id="server-port" required placeholder="6697" min="1" max="65535">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row checkboxes">
+                        <label class="custom-checkbox">
+                            <input type="checkbox" id="server-ssl" checked>
+                            <span class="checkmark"></span>
+                            Conexión Segura (SSL/TLS)
+                        </label>
+                        <label class="custom-checkbox">
+                            <input type="checkbox" id="server-verify-ssl">
+                            <span class="checkmark"></span>
+                            Verificar certificado SSL
+                        </label>
+                    </div>
+                    
+                    <div class="divider"><span>Identificación</span></div>
+                    
+                    <div class="form-row split">
+                        <div class="form-group">
+                            <label for="nick-input"><i class="fa-solid fa-user"></i> Nick / Apodo</label>
+                            <input type="text" id="nick-input" required placeholder="InterUser">
+                        </div>
+                        <div class="form-group">
+                            <label for="password-input"><i class="fa-solid fa-key"></i> Contraseña (NickServ)</label>
+                            <input type="password" id="password-input" placeholder="Opcional">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row split">
+                        <div class="form-group">
+                            <label for="username-input">Nombre de usuario (Ident)</label>
+                            <input type="text" id="username-input" placeholder="intercom">
+                        </div>
+                        <div class="form-group">
+                            <label for="realname-input">Nombre Real</label>
+                            <input type="text" id="realname-input" placeholder="InteRComunicador User">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row buttons-row split mt-4">
+                        <button type="submit" id="btn-connect" class="glow-button">
+                            <i class="fa-solid fa-plug"></i> Conectarse
+                        </button>
+                        <button type="button" id="btn-register-welcome" class="glow-button secondary">
+                            <i class="fa-solid fa-id-card"></i> Registrar Nick
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ----------------- INTERFAZ PRINCIPAL DE CHAT ----------------- -->
+        <div id="chat-screen" class="screen">
+            <!-- SIDEBAR IZQUIERDA: Canales y Chats -->
+            <aside class="sidebar" id="chats-sidebar">
+                <div class="sidebar-header">
+                    <div class="logo">
+                            <i class="fa-solid fa-satellite-dish"></i>
+                        <h2>Canales</h2>
+                    </div>
+                    <div class="sidebar-header-actions">
+                        <button id="btn-theme-toggle" class="icon-btn" title="Cambiar tema visual">
+                            <i class="fa-solid fa-palette"></i>
+                        </button>
+                        <button id="btn-mentions-tab" class="icon-btn" title="Ver menciones">
+                            <i class="fa-solid fa-at"></i>
+                            <span id="mentions-badge" class="mentions-badge hidden">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Panel de Estado superior -->
+                <div class="sidebar-status-panel">
+                    <div class="status-item">
+                        <span class="label">Estado:</span>
+                        <div class="value">
+                            <div id="status-indicator-dot" class="status-dot red"></div>
+                            <span id="status-indicator-text">Desconectado</span>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Apodo:</span>
+                        <span id="nick-indicator-text" class="value">-</span>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section scrollable">
+                    <h3>CHATS ACTIVOS</h3>
+                    <ul id="active-chats-list" class="sidebar-list">
+                        <!-- Se llena dinámicamente -->
+                    </ul>
+                </div>
+
+                <!-- Sección de Botones de Acciones del Sidebar -->
+                <div class="sidebar-section actions-section" id="actions-section">
+                    <button id="btn-toggle-actions" class="actions-toggle-header" aria-expanded="true">
+                        <span>ACCIONES</span>
+                        <i class="fa-solid fa-chevron-up actions-chevron"></i>
+                    </button>
+                    <div class="sidebar-action-buttons" id="actions-buttons-panel">
+                        <button id="btn-sidebar-search" class="action-btn">
+                            <i class="fa-solid fa-magnifying-glass"></i> Buscar Canales (Ctrl+F)
+                        </button>
+                        <button id="btn-sidebar-join" class="action-btn">
+                            <i class="fa-solid fa-hashtag"></i> Unirse a Canal (Ctrl+N)
+                        </button>
+                        <button id="btn-sidebar-pm" class="action-btn">
+                            <i class="fa-solid fa-comment-dots"></i> Charla Privada (Ctrl+P)
+                        </button>
+                        <button id="btn-sidebar-register" class="action-btn">
+                            <i class="fa-solid fa-id-card"></i> Registrar Nick (Ctrl+G)
+                        </button>
+                        <button id="btn-sidebar-close-tab" class="action-btn">
+                            <i class="fa-solid fa-xmark"></i> Cerrar Pestaña (Ctrl+W)
+                        </button>
+                        <button id="btn-sidebar-blacklist" class="action-btn">
+                            <i class="fa-solid fa-user-slash"></i> Lista Negra / Ignorados
+                        </button>
+                        <button id="btn-sidebar-favorites" class="action-btn">
+                            <i class="fa-solid fa-star"></i> Usuarios Favoritos
+                        </button>
+                        <button id="btn-sidebar-history" class="action-btn">
+                            <i class="fa-solid fa-clock-rotate-left"></i> Historial (15 días)
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="sidebar-footer">
+                    <button id="btn-disconnect" class="action-btn danger">
+                        <i class="fa-solid fa-power-off"></i> Desconectar
+                    </button>
+                </div>
+            </aside>
+
+            <!-- PANEL DE CHAT PRINCIPAL -->
+            <main class="chat-area">
+                <header class="chat-header">
+                    <div class="chat-info">
+                        <h2 id="active-chat-title">Status</h2>
+                        <p id="active-chat-topic" class="topic">Mensajes del sistema y del servidor</p>
+                    </div>
+                    <div class="header-actions">
+                        <button id="btn-away-toggle" class="icon-btn" title="Marcar como Ausente/Disponible">
+                            <i class="fa-solid fa-circle-dot" style="color:var(--green,#98c379)"></i>
+                        </button>
+                        <button id="btn-notif-toggle" class="icon-btn" title="Activar notificaciones de escritorio">
+                            <i class="fa-solid fa-bell-slash"></i>
+                        </button>
+                        <button id="btn-chat-search" class="icon-btn" title="Buscar en este chat (Ctrl+Shift+F)">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                        <button id="btn-toggle-users" class="icon-btn" title="Lista de Usuarios">
+                            <i class="fa-solid fa-users"></i>
+                        </button>
+                    </div>
+                </header>
+                
+                <!-- Banner de verificación anti-bot (e.g. ChatZona) -->
+                <div id="verification-banner" class="verification-banner hidden">
+                    <div class="banner-content">
+                        <i class="fa-solid fa-robot banner-icon"></i>
+                        <span id="verification-banner-text">Verificación requerida para este servidor.</span>
+                        <a id="verification-banner-link" href="#" target="_blank" class="glow-button small">Completar Verificación</a>
+                        <button id="btn-close-verification" class="close-btn" title="Ocultar aviso"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </div>
+                
+                <!-- Barra de búsqueda en el chat activo -->
+                <div id="chat-search-bar" class="chat-search-bar hidden">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="chat-search-input" placeholder="Buscar en este chat..." autocomplete="off">
+                    <span id="chat-search-count" class="search-count"></span>
+                    <button id="btn-chat-search-prev" class="icon-btn small" title="Anterior"><i class="fa-solid fa-chevron-up"></i></button>
+                    <button id="btn-chat-search-next" class="icon-btn small" title="Siguiente"><i class="fa-solid fa-chevron-down"></i></button>
+                    <button id="btn-chat-search-close" class="icon-btn small" title="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <!-- El registro del chat -->
+                <div id="chat-messages-container" class="messages-container">
+                    <!-- Se llena dinámicamente -->
+                </div>
+                
+                <!-- Entrada de mensajes -->
+                <footer class="chat-footer">
+                    <div class="input-container">
+                        <!-- Autocomplete popup helper -->
+                        <div id="autocomplete-popup" class="autocomplete-popup">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                        <input type="text" id="message-input" autocomplete="off" placeholder="Escribe un mensaje aquí o /help para ver comandos...">
+                        <button id="btn-send-message" class="send-btn">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </footer>
+            </main>
+
+            <!-- SIDEBAR DERECHA: Lista de Usuarios -->
+            <aside class="sidebar right-sidebar" id="users-sidebar">
+                <div class="sidebar-header">
+                    <h3>USUARIOS (<span id="user-count">0</span>)</h3>
+                    <div class="search-box">
+                        <input type="text" id="user-search-input" placeholder="Filtrar usuarios...">
+                    </div>
+                </div>
+                <ul id="users-list" class="sidebar-list">
+                    <!-- Se llena dinámicamente -->
+                </ul>
+            </aside>
+        </div>
+
+        <!-- ----------------- DIÁLOGOS MODALES ----------------- -->
+        
+        <div id="search-modal" class="modal">
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h2><i class="fa-solid fa-magnifying-glass"></i> Buscar Canales</h2>
+                    <button class="close-btn" onclick="closeModal('search-modal')"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <!-- modal-body fills remaining space as flex-column -->
+                <div class="modal-body search-modal-body">
+                    <div class="search-bar-row">
+                        <input type="text" id="channel-search-filter" placeholder="Filtra en tiempo real por nombre o tema...">
+                        <button id="btn-trigger-search" class="glow-button small">Cargar canales del servidor</button>
+                    </div>
+                    <div class="search-status" id="search-status-text">Pulsa el botón para cargar la lista de canales.</div>
+                    <div class="table-container">
+                        <table id="channels-table">
+                            <thead>
+                                <tr>
+                                    <th title="Ordenar por nombre">Canal</th>
+                                    <th title="Ordenar por usuarios" class="sort-desc">Usuarios</th>
+                                    <th title="Ordenar por tema">Tema</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se llena dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: UNIRSE A CANAL -->
+        <div id="join-modal" class="modal">
+            <div class="modal-content glass-card small-modal">
+                <div class="modal-header">
+                    <h2>Unirse a un Canal</h2>
+                    <button class="close-btn" onclick="closeModal('join-modal')"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body">
+                    <form id="join-form">
+                        <div class="form-group">
+                            <label for="join-channel-name">Nombre del Canal</label>
+                            <input type="text" id="join-channel-name" placeholder="#lobby" required>
+                        </div>
+                        <button type="submit" class="glow-button mt-4">Unirse</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: CHARLA PRIVADA -->
+        <div id="pm-modal" class="modal">
+            <div class="modal-content glass-card small-modal">
+                <div class="modal-header">
+                    <h2>Iniciar Charla Privada</h2>
+                    <button class="close-btn" onclick="closeModal('pm-modal')"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body">
+                    <form id="pm-form">
+                        <div class="form-group">
+                            <label for="pm-nick">Nick / Apodo del destinatario</label>
+                            <input type="text" id="pm-nick" placeholder="Apodo" required>
+                        </div>
+                        <button type="submit" class="glow-button mt-4">Iniciar Chat</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: REGISTRAR NICK -->
+        <div id="register-modal" class="modal">
+            <div class="modal-content glass-card small-modal">
+                <div class="modal-header">
+                    <h2>Registrar Nick con NickServ</h2>
+                    <button class="close-btn" onclick="closeModal('register-modal')"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body">
+                    <form id="register-form">
+                        <p class="modal-desc">Registra tu apodo actual en la red IRC ingresando los siguientes datos:</p>
+                        <div class="form-group">
+                            <label for="reg-modal-password">Contraseña segura</label>
+                            <input type="password" id="reg-modal-password" placeholder="Contraseña" required>
+                        </div>
+                        <div class="form-group mt-2">
+                            <label for="reg-modal-email">Correo Electrónico</label>
+                            <input type="email" id="reg-modal-email" placeholder="correo@ejemplo.com" required>
+                        </div>
+                        <button type="submit" class="glow-button mt-4">Registrar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: INFO DE USUARIO (WHOIS) -->
+        <div id="whois-modal" class="modal">
+            <div class="modal-content glass-card small-modal whois-modal-content">
+                <div class="modal-header">
+                    <h2><i class="fa-solid fa-user-magnifying-glass"></i> Info de Usuario</h2>
+                    <button class="close-btn" onclick="closeModal('whois-modal')"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body whois-body">
+                    <div class="whois-avatar-section">
+                        <img id="whois-avatar" src="" alt="Avatar" class="whois-avatar">
+                        <div class="whois-nick-block">
+                            <span id="whois-nick" class="whois-nick"></span>
+                            <span id="whois-realname" class="whois-realname"></span>
+                            <span id="whois-account" class="whois-account"></span>
+                        </div>
+                    </div>
+                    <div class="whois-fields" id="whois-fields">
+                        <!-- Filled dynamically -->
+                    </div>
+                    <div class="whois-actions">
+                        <button id="btn-whois-pm" class="glow-button small"><i class="fa-solid fa-comment"></i> Mensaje privado</button>
+                        <button id="btn-whois-refresh" class="glow-button small secondary"><i class="fa-solid fa-rotate"></i> Actualizar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: SELECTOR DE TEMA -->
+        <div id="theme-modal" class="modal">
+            <div class="modal-content glass-card small-modal">
+                <div class="modal-header">
+                    <h2><i class="fa-solid fa-palette"></i> Tema Visual</h2>
+                    <button class="close-btn" onclick="closeModal('theme-modal')"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-desc">Elige el esquema de colores de la interfaz.</p>
+                    <div class="theme-grid" id="theme-grid">
+                        <div class="theme-card" data-theme="tokyo-night">
+                            <div class="theme-preview" style="background:#1a1b26"><span style="color:#7aa2f7">Tokyo Night</span></div>
+                            <span>Tokyo Night</span>
+                        </div>
+                        <div class="theme-card" data-theme="dracula">
+                            <div class="theme-preview" style="background:#282a36"><span style="color:#bd93f9">Dracula</span></div>
+                            <span>Dracula</span>
+                        </div>
+                        <div class="theme-card" data-theme="nord">
+                            <div class="theme-preview" style="background:#2e3440"><span style="color:#88c0d0">Nord</span></div>
+                            <span>Nord</span>
+                        </div>
+                        <div class="theme-card" data-theme="solarized">
+                            <div class="theme-preview" style="background:#002b36"><span style="color:#268bd2">Solarized</span></div>
+                            <span>Solarized Dark</span>
+                        </div>
+                        <div class="theme-card" data-theme="light">
+                            <div class="theme-preview" style="background:#fafafa; border:1px solid #ddd"><span style="color:#4078f2">Light</span></div>
+                            <span>Claro</span>
+                        </div>
+                    </div>
+                    <div class="sounds-section mt-3">
+                        <h4 style="font-size:12px;color:var(--text-muted);margin-bottom:8px;letter-spacing:1px">SONIDOS DE ALERTA</h4>
+                        <div class="sound-row">
+                            <label><input type="checkbox" id="sound-mention"> Sonido en menciones</label>
+                            <button id="btn-test-mention-sound" class="glow-button small"><i class="fa-solid fa-play"></i></button>
+                        </div>
+                        <div class="sound-row">
+                            <label><input type="checkbox" id="sound-pm"> Sonido en PMs nuevos</label>
+                            <button id="btn-test-pm-sound" class="glow-button small"><i class="fa-solid fa-play"></i></button>
+                        </div>
+                        <div class="sound-row">
+                            <label><input type="checkbox" id="sound-join"> Sonido al unirse a canal</label>
+                            <button id="btn-test-join-sound" class="glow-button small"><i class="fa-solid fa-play"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: MENCIONES -->
+        <div id="mentions-modal" class="modal">
+            <div class="modal-content glass-card" style="max-width:640px;width:95%">
+                <div class="modal-header">
+                    <h2><i class="fa-solid fa-at"></i> Mis Menciones</h2>
+                    <button class="close-btn" onclick="closeModal('mentions-modal')"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-desc">Todos los mensajes donde te han mencionado en esta sesión.</p>
+                    <button id="btn-clear-mentions" class="glow-button small danger" style="margin-bottom:10px">
+                        <i class="fa-solid fa-trash"></i> Limpiar lista
+                    </button>
+                    <div id="mentions-list" class="history-results">
+                        <p class="history-empty">Sin menciones todavía.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="blacklist-modal" class="modal">
+            <div class="modal-content glass-card small-modal">
+                <div class="modal-header">
+                    <h2><i class="fa-solid fa-user-slash"></i> Usuarios Ignorados</h2>
+                    <button class="close-btn" onclick="closeModal('blacklist-modal')"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-desc">Los mensajes de estos usuarios no se mostrarán en ningún canal ni chat privado.</p>
+                    
+                    <div class="form-group row-group mt-2 mb-3" style="display: flex; gap: 8px;">
+                        <input type="text" id="blacklist-add-nick" placeholder="Apodo/Nick a ignorar" style="flex-grow: 1;">
+                        <button id="btn-blacklist-add" class="glow-button small"><i class="fa-solid fa-plus"></i> Ignorar</button>
+                    </div>
+
+                    <div class="blacklist-container mt-2">
+                        <ul id="blacklist-ul" class="blacklist-ul">
+                            <!-- Filled dynamically -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: USUARIOS FAVORITOS -->
+        <div id="favorites-modal" class="modal">
+            <div class="modal-content glass-card small-modal">
+                <div class="modal-header">
+                    <h2><i class="fa-solid fa-star"></i> Usuarios Favoritos</h2>
+                    <button class="close-btn" onclick="closeModal('favorites-modal')"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-desc">Tus contactos favoritos. Haz clic derecho sobre cualquier nick y selécciona <strong>★ Marcar como favorito</strong>.</p>
+                    <div class="form-group row-group mt-2 mb-3" style="display: flex; gap: 8px;">
+                        <input type="text" id="favorites-add-nick" placeholder="Nick a agregar como favorito" style="flex-grow: 1;">
+                        <button id="btn-favorites-add" class="glow-button small"><i class="fa-solid fa-star"></i> Agregar</button>
+                    </div>
+                    <div class="blacklist-container mt-2">
+                        <ul id="favorites-ul" class="blacklist-ul">
+                            <!-- Filled dynamically -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: HISTORIAL DE CONVERSACIONES -->
+        <div id="history-modal" class="modal">
+            <div class="modal-content glass-card" style="max-width: 760px; width: 95%;">
+                <div class="modal-header">
+                    <h2><i class="fa-solid fa-clock-rotate-left"></i> Historial de Conversaciones</h2>
+                    <button class="close-btn" onclick="closeModal('history-modal')"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-desc">Mensajes guardados localmente. Se limpian automáticamente tras <strong>15 días</strong>.</p>
+                    <div class="history-filters" style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+                        <select id="history-select-tab" style="flex:1; min-width:140px;"><option value="">-- Selecciona canal/chat --</option></select>
+                        <input type="date" id="history-date-from" style="flex:1; min-width:120px;">
+                        <input type="date" id="history-date-to" style="flex:1; min-width:120px;">
+                        <button id="btn-history-search" class="glow-button small"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                        <button id="btn-history-clear-all" class="glow-button small danger"><i class="fa-solid fa-trash"></i> Limpiar todo</button>
+                    </div>
+                    <div id="history-results" class="history-results">
+                        <p style="text-align:center; color:var(--text-muted); padding:20px;">Selecciona un canal y haz clic en Buscar.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTEXT MENU (nick right-click) -->
+        <div id="nick-context-menu" class="nick-context-menu hidden">
+            <ul>
+                <li id="ctx-whois"><i class="fa-solid fa-user-magnifying-glass"></i> Ver Info / WHOIS</li>
+                <li id="ctx-pm"><i class="fa-solid fa-comment"></i> Mensaje Privado</li>
+                <li id="ctx-mention"><i class="fa-solid fa-at"></i> Mencionar en chat</li>
+                <li id="ctx-favorite"><i class="fa-solid fa-star"></i> Marcar favorito</li>
+                <li id="ctx-ignore"><i class="fa-solid fa-user-slash"></i> Ignorar Usuario</li>
+                <li class="separator"></li>
+                <li id="ctx-ctcp-version"><i class="fa-solid fa-code"></i> CTCP Version</li>
+                <li id="ctx-ctcp-ping"><i class="fa-solid fa-satellite-dish"></i> CTCP Ping</li>
+            </ul>
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
