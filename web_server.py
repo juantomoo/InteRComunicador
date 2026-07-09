@@ -13,6 +13,15 @@ import uvicorn
 
 from irc_client import IRCClient
 
+# Optional personal assistant module (not in public repo)
+try:
+    from personal import assistant as _personal_assistant
+    PERSONAL_MODULE_AVAILABLE = True
+    logging.info("Personal assistant module loaded.")
+except ImportError:
+    _personal_assistant = None  # type: ignore
+    PERSONAL_MODULE_AVAILABLE = False
+
 # Setup logging
 logging.basicConfig(
     filename='irc_web_debug.log',
@@ -265,7 +274,23 @@ class AppState:
                 await self.broadcast({"type": "sync_tabs", "tabs": self.joined_chats})
                 
             self.add_message(channel, "msg", nick, msg, {"is_private": is_private})
-            
+
+            # ── Personal assistant hook (only when module is present) ──────────
+            if PERSONAL_MODULE_AVAILABLE and is_private and _personal_assistant:
+                suggestion = _personal_assistant.on_pm_received(
+                    nick=nick, canal=channel, mensaje=msg
+                )
+                if suggestion is not None:
+                    # New contact: push suggestion panel to the frontend
+                    asyncio.create_task(self.broadcast({
+                        "type": "personal_suggestion",
+                        "nick": suggestion["nick"],
+                        "resumen": suggestion["resumen"],
+                        "aperturas": suggestion["aperturas"],
+                        "filtros": suggestion["filtros"],
+                    }))
+            # ─────────────────────────────────────────────────────────────────
+
             url = self.extract_verification_url(msg)
             if url:
                 logging.info(f"Verification URL detected in msg: {url}")

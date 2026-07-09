@@ -489,8 +489,14 @@ function handleSessionSocketEvent(sessId, data) {
         if (sessId === activeSessionId) {
             renderWhoisPanel(data.data);
         }
+    } else if (type === "personal_suggestion") {
+        // Optional: only present if personal/ module is installed on the server
+        if (sessId === activeSessionId) {
+            showPersonalSuggestionPanel(data);
+        }
     }
 }
+
 
 function showVerificationBanner(url) {
     const verificationBanner = document.getElementById("verification-banner");
@@ -2433,3 +2439,78 @@ window.onload = () => {
     }
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// PERSONAL SUGGESTION PANEL  (only active when personal/ module is installed)
+// ═══════════════════════════════════════════════════════════════════════════
+function showPersonalSuggestionPanel(data) {
+    const panelId = "personal-suggest-panel";
+    let panel = document.getElementById(panelId);
+
+    if (!panel) {
+        panel = document.createElement("div");
+        panel.id = panelId;
+        panel.style.cssText = `
+            position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+            width: 360px; max-height: 70vh; overflow-y: auto;
+            background: var(--bg-sidebar, #1f2335);
+            border: 1px solid var(--accent, #7aa2f7);
+            border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            padding: 16px; font-size: 13px; color: var(--text-main, #a9b1d6);
+        `;
+        document.body.appendChild(panel);
+    }
+
+    const copyBtn = (text, label, idx) => `
+        <div style="
+            background: var(--bg-main,#1a1b26); border-radius:8px;
+            padding:10px 12px; margin-bottom:8px; cursor:pointer;
+            border:1px solid var(--border-color,#292e42);
+            transition: border-color .2s;"
+         onmouseenter="this.style.borderColor='var(--accent,#7aa2f7)'"
+         onmouseleave="this.style.borderColor='var(--border-color,#292e42)'"
+         onclick="navigator.clipboard.writeText(${JSON.stringify(text)}).then(()=>{
+             this.style.borderColor='var(--green,#9ece6a)';
+             setTimeout(()=>this.style.borderColor='var(--border-color,#292e42)',1500);
+         })"
+         title="Clic para copiar al portapapeles">
+            <span style="color:var(--text-muted,#565f89);font-size:10px;text-transform:uppercase;
+                         letter-spacing:.8px;">${label} ${idx+1}</span><br>
+            <span style="line-height:1.5;">${text}</span>
+        </div>`;
+
+    const aperturas = (data.aperturas || []).map((t, i) => copyBtn(t, "Apertura", i)).join("");
+    const filtros   = (data.filtros   || []).map((q, i) => copyBtn(q, "Filtro",   i)).join("");
+
+    panel.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span style="font-weight:700;color:var(--accent,#7aa2f7);">
+                ✦ Nuevo contacto:
+                <span style="color:var(--text-highlight,#fff)">${data.nick}</span>
+            </span>
+            <button onclick="document.getElementById('${panelId}').remove()"
+                    style="background:none;border:none;color:var(--text-muted,#565f89);
+                           cursor:pointer;font-size:18px;line-height:1;padding:0 4px;">✕</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted,#565f89);margin-bottom:14px;
+                    padding:8px;background:var(--bg-main,#1a1b26);border-radius:6px;">
+            ${data.resumen || ""}
+        </div>
+        <div style="font-weight:600;color:var(--text-muted,#565f89);font-size:10px;
+                    text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">
+            Aperturas sugeridas <span style="opacity:.4;font-weight:400;">(clic = copiar)</span>
+        </div>
+        ${aperturas}
+        <div style="font-weight:600;color:var(--text-muted,#565f89);font-size:10px;
+                    text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;">
+            Preguntas de filtro <span style="opacity:.4;font-weight:400;">(clic = copiar)</span>
+        </div>
+        ${filtros}
+        <button onclick="document.getElementById('${panelId}').remove()"
+                style="width:100%;margin-top:14px;padding:8px;border-radius:6px;
+                       border:1px solid var(--border-color,#292e42);
+                       background:none;color:var(--text-muted,#565f89);
+                       cursor:pointer;font-size:12px;">
+            Cerrar panel
+        </button>
+    `;
+}
