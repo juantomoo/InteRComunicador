@@ -33,6 +33,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# Private personal module — never tracked
+personal/
+
 # Logs and databases
 *.log
 irc_debug.log
